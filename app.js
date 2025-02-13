@@ -14,7 +14,7 @@ function generateRandomString(length) {
 // Login button click handler
 document.getElementById('login-button').addEventListener('click', () => {
     const state = generateRandomString(16);
-    const scope = 'user-read-playback-state';
+    const scope = 'user-read-playback-state user-modify-playback-state';
 
     const args = new URLSearchParams({
         response_type: 'token',
@@ -24,9 +24,7 @@ document.getElementById('login-button').addEventListener('click', () => {
         state: state
     });
 
-    const authUrl = 'https://accounts.spotify.com/authorize?' + args;
-    console.log('Redirecting to:', authUrl);
-    window.location = authUrl;
+    window.location = 'https://accounts.spotify.com/authorize?' + args;
 });
 
 // Handle the callback from Spotify
@@ -44,7 +42,56 @@ if (window.location.hash) {
     }
 }
 
-// Function to check what's currently playing
+let isPlaying = false;
+
+async function togglePlayPause() {
+    const accessToken = localStorage.getItem('spotify_access_token');
+    const button = document.getElementById('play-pause-button');
+    const icon = button.querySelector('i');
+    
+    if (!accessToken) {
+        console.error('No access token found');
+        return;
+    }
+
+    try {
+        if (!isPlaying) {
+            console.log('Attempting to play...');
+            const response = await fetch('https://api.spotify.com/v1/me/player/play', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.status === 404) {
+                alert('No active device found. Please open Spotify first.');
+            } else if (response.ok) {
+                console.log('Successfully started playback');
+                isPlaying = true;
+                icon.className = 'fas fa-pause';
+            }
+        } else {
+            console.log('Attempting to pause...');
+            const response = await fetch('https://api.spotify.com/v1/me/player/pause', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.ok) {
+                console.log('Successfully paused playback');
+                isPlaying = false;
+                icon.className = 'fas fa-play';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error controlling playback. Make sure you have Spotify Premium and an active device.');
+    }
+}
+
 async function checkNowPlaying() {
     const accessToken = localStorage.getItem('spotify_access_token');
     if (!accessToken) return;
@@ -58,6 +105,7 @@ async function checkNowPlaying() {
 
         if (response.status === 204) {
             console.log('No track currently playing');
+            document.getElementById('now-playing').style.display = 'none';
             return;
         }
 
@@ -68,14 +116,35 @@ async function checkNowPlaying() {
             document.getElementById('artist-name').textContent = data.item.artists.map(artist => artist.name).join(', ');
             document.getElementById('album-name').textContent = data.item.album.name;
             document.getElementById('album-art').src = data.item.album.images[0].url;
+            
+            // Update play/pause button state
+            const icon = document.querySelector('#play-pause-button i');
+            if (icon) {
+                const previousState = isPlaying;
+                isPlaying = data.is_playing;
+                icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+                
+                if (previousState !== isPlaying) {
+                    console.log(`Playback state changed from ${previousState} to ${isPlaying}`);
+                }
+            }
         }
     } catch (error) {
         console.error('Error:', error);
     }
 }
 
-// Check for currently playing track every 5 seconds
-if (localStorage.getItem('spotify_access_token')) {
-    setInterval(checkNowPlaying, 5000);
-    checkNowPlaying();
-} 
+// Initialize after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    const playPauseButton = document.getElementById('play-pause-button');
+    
+    if (playPauseButton) {
+        playPauseButton.addEventListener('click', togglePlayPause);
+    }
+
+    // Check for currently playing track every 1 second
+    if (localStorage.getItem('spotify_access_token')) {
+        checkNowPlaying();
+        setInterval(checkNowPlaying, 1000);
+    }
+}); 
