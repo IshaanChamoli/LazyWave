@@ -4,8 +4,8 @@
   "version": "1.0",
   "description": "Control Spotify playback directly from your browser",
   "permissions": [
-    "storage",
     "identity",
+    "storage",
     "tabs"
   ],
   "host_permissions": [

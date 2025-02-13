@@ -1,5 +1,9 @@
 const clientId = '264a5ade3f104c2f9419ff2e0fcf307b';
-const redirectUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
+const redirectUri = `https://${chrome.runtime.id}.chromiumapp.org/callback`;
+
+// Add more detailed logging
+console.log('Extension ID:', chrome.runtime.id);
+console.log('Full Redirect URI:', redirectUri);
 
 // Add this line at the start of your file to see the exact URI
 console.log('Please add this redirect URI to Spotify Dashboard:', redirectUri);
@@ -49,20 +53,19 @@ document.getElementById('login-button').addEventListener('click', async () => {
     const authUrl = 'https://accounts.spotify.com/authorize?' + args;
 
     try {
-        // Use chrome.identity.launchWebAuthFlow with a popup
         const responseUrl = await new Promise((resolve, reject) => {
-            const width = 450;
-            const height = 730;
-            const left = (screen.width / 2) - (width / 2);
-            const top = (screen.height / 2) - (height / 2);
-
             chrome.identity.launchWebAuthFlow({
                 url: authUrl,
                 interactive: true
             }, (response) => {
                 if (chrome.runtime.lastError) {
+                    console.error('Chrome Runtime Error:', chrome.runtime.lastError);
                     reject(new Error(chrome.runtime.lastError.message));
+                } else if (!response) {
+                    console.error('No response received from auth flow');
+                    reject(new Error('No response received from authorization'));
                 } else {
+                    console.log('Auth flow completed successfully');
                     resolve(response);
                 }
             });
@@ -116,8 +119,9 @@ document.getElementById('login-button').addEventListener('click', async () => {
         document.getElementById('now-playing').style.display = 'block';
 
     } catch (error) {
-        console.error('Authentication error:', error);
-        alert(`Authentication failed: ${error.message}`);
+        console.error('Detailed authentication error:', error);
+        console.error('Auth URL attempted:', authUrl);
+        alert(`Authentication failed: ${error.message}\nPlease check the console for more details.`);
     }
 });
 
