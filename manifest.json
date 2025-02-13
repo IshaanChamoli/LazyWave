@@ -22,5 +22,9 @@
   "icons": {
     "128": "icon128.png"
   },
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxH5hOiRBXOg4I3mE7YG5TeuOqCXQQf5JTH5pK4ywxvKrHjYtHxJTxVEUeD8KGqruqDV/9N3HJtGbWQYZbXEVjpQtYHoUkP0KaIqKk+IMBZJdkOnJ+wGzGcKcZjvM9WoHXyoGz9GBjTDYDZhcEHr0xy9T9dpvH3HXsZqeEIo6QIDAQAB"
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxH5hOiRBXOg4I3mE7YG5TeuOqCXQQf5JTH5pK4ywxvKrHjYtHxJTxVEUeD8KGqruqDV/9N3HJtGbWQYZbXEVjpQtYHoUkP0KaIqKk+IMBZJdkOnJ+wGzGcKcZjvM9WoHXyoGz9GBjTDYDZhcEHr0xy9T9dpvH3HXsZqeEIo6QIDAQAB",
+  "web_accessible_resources": [{
+    "resources": ["wave.png"],
+    "matches": ["<all_urls>"]
+  }]
 } 

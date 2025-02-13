@@ -1,49 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LazyWave</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
-            width: 300px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 500px;
             margin: 0;
-            padding: 15px;
+            padding: 0;
+            font-family: Arial, sans-serif;
             background: #121212;
             color: white;
         }
 
-        .header {
+        .container {
+            display: flex;
+            position: relative;
+            padding: 0;
+            gap: 40px;
+            overflow: hidden;
+            min-height: 100%;
+        }
+
+        .spotify-section {
+            flex: 2;
+            padding: 20px 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .background-art {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            opacity: 0.3;
+            filter: blur(3px);
+            z-index: 0;
+            mask-image: linear-gradient(to right, 
+                rgba(0,0,0,0.95) 0%,
+                rgba(0,0,0,0.8) 50%,
+                rgba(0,0,0,0) 100%
+            );
+            -webkit-mask-image: linear-gradient(to right, 
+                rgba(0,0,0,0.95) 0%,
+                rgba(0,0,0,0.8) 50%,
+                rgba(0,0,0,0) 100%
+            );
+        }
+
+        .background-art::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, 
+                rgba(18, 18, 18, 0.3),
+                rgba(18, 18, 18, 0.6)
+            );
+        }
+
+        .wave-separator {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 30px;
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #282828;
         }
 
-        .header img {
-            width: 32px;
-            height: 32px;
-            margin-right: 10px;
+        .wave-line {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 100%;
+            background: url('wave.png') no-repeat center;
+            background-size: 20px 100%;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 20px;
-            color: #1DB954;
+        .audio-section {
+            flex: 1;
+            padding: 20px 25px;
         }
 
         #login-button {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             background: #1DB954;
             color: white;
             border: none;
-            border-radius: 24px;
+            border-radius: 20px;
             cursor: pointer;
-            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
             transition: all 0.3s ease;
         }
 
@@ -52,47 +109,54 @@
             transform: scale(1.02);
         }
 
-        #now-playing {
-            margin-top: 15px;
-            text-align: center;
-            display: none;
+        .track-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
         }
 
-        .album-art {
-            width: 200px;
-            height: 200px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        #album-art {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .track-details {
+            flex-grow: 1;
+            overflow: hidden;
         }
 
         #track-name {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
-            margin: 8px 0;
-            color: #fff;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         #artist-name {
-            font-size: 14px;
-            color: #b3b3b3;
-            margin: 4px 0;
-        }
-
-        #album-name {
             font-size: 12px;
             color: #b3b3b3;
             margin: 4px 0;
         }
 
+        #album-name {
+            font-size: 11px;
+            color: #b3b3b3;
+        }
+
         .playback-controls {
-            margin: 20px 0;
+            margin: 15px 0 0 0;
             text-align: center;
         }
 
         .control-button {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: #1DB954;
             color: white;
@@ -103,7 +167,6 @@
             justify-content: center;
             transition: all 0.3s;
             margin: 0 auto;
-            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
         }
 
         .control-button:hover {
@@ -111,49 +174,22 @@
             transform: scale(1.1);
         }
 
-        .control-button i {
-            font-size: 20px;
-        }
-
-        .not-playing {
-            text-align: center;
-            color: #b3b3b3;
-            margin-top: 20px;
+        .section-title {
             font-size: 14px;
-        }
-
-        .footer {
-            margin-top: 15px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .section-divider {
-            height: 1px;
-            background: #282828;
-            margin: 20px 0;
-        }
-
-        .browser-audio {
-            text-align: center;
-        }
-
-        .browser-audio h3 {
+            font-weight: bold;
+            margin-bottom: 10px;
             color: #1DB954;
-            font-size: 16px;
-            margin: 0 0 10px 0;
         }
 
-        .audio-status {
+        #browser-audio-status {
+            font-size: 12px;
             padding: 10px;
             border-radius: 4px;
-            font-size: 13px;
-            transition: all 0.3s ease;
+            background: rgba(29, 185, 84, 0.1);
+            margin-top: 10px;
         }
 
         .audio-playing {
-            background: rgba(29, 185, 84, 0.1);
             color: #1DB954;
         }
 
@@ -163,37 +199,37 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="icon128.png" alt="LazyWave">
-        <h1>LazyWave</h1>
-    </div>
+    <div class="container">
+        <div class="spotify-section">
+            <div class="background-art"></div>
+            <button id="login-button">Login with Spotify</button>
+            <div id="now-playing" style="display: none;">
+                <div class="track-info">
+                    <img id="album-art" src="" alt="Album Art">
+                    <div class="track-details">
+                        <p id="track-name"></p>
+                        <p id="artist-name"></p>
+                        <p id="album-name"></p>
+                    </div>
+                </div>
+                <div class="playback-controls">
+                    <button id="play-pause-button" class="control-button">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="wave-separator">
+                <div class="wave-line"></div>
+            </div>
+        </div>
 
-    <button id="login-button">Connect with Spotify</button>
-    
-    <div id="now-playing">
-        <img id="album-art" class="album-art" src="" alt="Album Art">
-        <h2 id="track-name"></h2>
-        <p id="artist-name"></p>
-        <p id="album-name"></p>
-        <div class="playback-controls">
-            <button id="play-pause-button" class="control-button">
-                <i class="fas fa-play"></i>
-            </button>
+        <div class="audio-section">
+            <div class="section-title">Browser Audio</div>
+            <div id="browser-audio-status" class="audio-silent">
+                No browser audio playing
+            </div>
         </div>
     </div>
-
-    <div class="browser-audio">
-        <div class="section-divider"></div>
-        <h3>Browser Audio</h3>
-        <div id="browser-audio-status" class="audio-status">
-            Checking browser audio...
-        </div>
-    </div>
-
-    <div class="footer">
-        Powered by Spotify
-    </div>
-
     <script src="popup.js"></script>
 </body>
 </html> 

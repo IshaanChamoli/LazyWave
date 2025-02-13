@@ -195,6 +195,7 @@ async function checkNowPlaying() {
             document.getElementById('artist-name').textContent = data.item.artists.map(artist => artist.name).join(', ');
             document.getElementById('album-name').textContent = data.item.album.name;
             document.getElementById('album-art').src = data.item.album.images[0].url;
+            document.querySelector('.background-art').style.backgroundImage = `url(${data.item.album.images[0].url})`;
             
             const icon = document.querySelector('#play-pause-button i');
             if (icon) {
