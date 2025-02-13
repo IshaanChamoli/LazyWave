@@ -218,4 +218,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('login-button').style.display = 'block';
         document.getElementById('now-playing').style.display = 'none';
     }
+
+    // Add browser audio detection
+    const audioStatusElement = document.getElementById('browser-audio-status');
+
+    function updateAudioUI(audioState) {
+        if (audioState.isPlaying) {
+            audioStatusElement.textContent = `Playing audio: ${audioState.tabTitle}`;
+            audioStatusElement.classList.add('audio-playing');
+            audioStatusElement.classList.remove('audio-silent');
+        } else {
+            audioStatusElement.textContent = 'No browser audio playing';
+            audioStatusElement.classList.add('audio-silent');
+            audioStatusElement.classList.remove('audio-playing');
+        }
+    }
+
+    async function checkBrowserAudio() {
+        try {
+            const response = await chrome.runtime.sendMessage({ action: "getAudioState" });
+            updateAudioUI(response);
+        } catch (error) {
+            console.error('Error checking browser audio:', error);
+            audioStatusElement.textContent = 'Error checking audio status';
+        }
+    }
+
+    // Start checking browser audio
+    checkBrowserAudio();
+    setInterval(checkBrowserAudio, 1000);
 }); 

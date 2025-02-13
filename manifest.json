@@ -5,12 +5,16 @@
   "description": "Control Spotify playback directly from your browser",
   "permissions": [
     "storage",
-    "identity"
+    "identity",
+    "tabs"
   ],
   "host_permissions": [
     "https://accounts.spotify.com/*",
     "https://api.spotify.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icon128.png"
