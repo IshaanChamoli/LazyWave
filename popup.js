@@ -273,10 +273,12 @@ function updateAudioUI(audioState) {
         audioStatusElement.textContent = `Playing audio: ${audioState.tabTitle}`;
         audioStatusElement.classList.add('audio-playing');
         audioStatusElement.classList.remove('audio-silent');
+        document.querySelector('.audio-wave').style.opacity = '0.15';
     } else {
         audioStatusElement.textContent = 'No browser audio playing';
         audioStatusElement.classList.add('audio-silent');
         audioStatusElement.classList.remove('audio-playing');
+        document.querySelector('.audio-wave').style.opacity = '0.1';
     }
 }
 
