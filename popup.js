@@ -126,12 +126,26 @@ async function checkNowPlaying() {
 
             if (elements.nowPlaying) {
                 elements.nowPlaying.style.display = 'block';
-                elements.trackName.innerHTML = '<a href="spotify://" class="spotify-link">Open Spotify Desktop</a>';
+                elements.trackName.innerHTML = '<a href="#" class="spotify-link">Open Spotify Desktop</a>';
                 elements.trackName.classList.add('instruction');
                 elements.artistName.textContent = 'Start playing music to see controls';
                 elements.artistName.classList.add('instruction');
                 elements.albumArt.src = 'icon128.png';
                 elements.backgroundArt.style.backgroundImage = 'none';
+
+                // Add click handler for the Spotify link
+                const spotifyLink = elements.trackName.querySelector('.spotify-link');
+                if (spotifyLink) {
+                    spotifyLink.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        try {
+                            // This will work because it's within a user gesture (click)
+                            await chrome.tabs.update({ url: 'spotify://' });
+                        } catch (error) {
+                            console.error('Failed to open Spotify:', error);
+                        }
+                    });
+                }
             }
             return;
         }
@@ -183,7 +197,7 @@ async function checkNowPlaying() {
 
             if (elements.nowPlaying) {
                 elements.nowPlaying.style.display = 'block';
-                elements.trackName.innerHTML = '<a href="spotify://" class="spotify-link">Open Spotify Desktop</a>';
+                elements.trackName.innerHTML = '<a href="#" class="spotify-link">Open Spotify Desktop</a>';
                 elements.trackName.classList.add('instruction');
                 elements.artistName.textContent = 'Start playing music to see controls';
                 elements.artistName.classList.add('instruction');
