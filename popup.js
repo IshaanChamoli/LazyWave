@@ -128,7 +128,7 @@ async function checkNowPlaying() {
                 elements.nowPlaying.style.display = 'block';
                 elements.trackName.innerHTML = '<a href="#" class="spotify-link">Open Spotify Desktop</a>';
                 elements.trackName.classList.add('instruction');
-                elements.artistName.textContent = 'Start playing music to see controls';
+                elements.artistName.textContent = 'Start playing music to see it here';
                 elements.artistName.classList.add('instruction');
                 elements.albumArt.src = 'icon128.png';
                 elements.backgroundArt.style.backgroundImage = 'none';
@@ -199,7 +199,7 @@ async function checkNowPlaying() {
                 elements.nowPlaying.style.display = 'block';
                 elements.trackName.innerHTML = '<a href="#" class="spotify-link">Open Spotify Desktop</a>';
                 elements.trackName.classList.add('instruction');
-                elements.artistName.textContent = 'Start playing music to see controls';
+                elements.artistName.textContent = 'Start playing music to see it here';
                 elements.artistName.classList.add('instruction');
             }
         }
