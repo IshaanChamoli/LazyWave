@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 let isPlaying = false;
+let wasAutoPaused = false;
 
 async function getAccessToken() {
     const result = await chrome.storage.local.get(['spotify_access_token']);
@@ -74,6 +75,7 @@ async function pauseSpotify() {
 
         if (response.ok) {
             isPlaying = false;
+            wasAutoPaused = true;
         }
     } catch (error) {
         console.error('Error pausing Spotify:', error);
@@ -100,6 +102,7 @@ async function playSpotify() {
     }
 }
 
+// Update the checkNowPlaying function
 async function checkNowPlaying() {
     const accessToken = await getAccessToken();
     if (!accessToken) return;
@@ -111,10 +114,42 @@ async function checkNowPlaying() {
             }
         });
 
-        if (response.status === 204) {
-            const nowPlayingElement = document.getElementById('now-playing');
-            if (nowPlayingElement) {
-                nowPlayingElement.style.display = 'none';
+        // If no active device or no data
+        if (response.status === 204 || response.status === 404) {
+            const elements = {
+                nowPlaying: document.getElementById('now-playing'),
+                trackName: document.getElementById('track-name'),
+                artistName: document.getElementById('artist-name'),
+                albumArt: document.getElementById('album-art'),
+                backgroundArt: document.querySelector('.background-art'),
+                playPauseIcon: document.getElementById('play-pause-icon').querySelector('i')
+            };
+
+            if (elements.nowPlaying) {
+                elements.nowPlaying.style.display = 'block';
+                elements.trackName.innerHTML = '<a href="spotify://" class="spotify-link">Open Spotify Desktop</a>';
+                elements.trackName.classList.add('instruction');
+                elements.artistName.textContent = 'Start playing music to see controls';
+                elements.artistName.classList.add('instruction');
+                elements.albumArt.src = 'icon128.png';
+                elements.backgroundArt.style.backgroundImage = 'none';
+                elements.playPauseIcon.className = 'fas fa-play';
+
+                // Add click handler for the link
+                const spotifyLink = elements.trackName.querySelector('.spotify-link');
+                if (spotifyLink) {
+                    spotifyLink.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        try {
+                            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                            if (tab) {
+                                await chrome.tabs.update(tab.id, { url: spotifyLink.href });
+                            }
+                        } catch (error) {
+                            console.error('Failed to open Spotify:', error);
+                        }
+                    });
+                }
             }
             return;
         }
@@ -145,8 +180,13 @@ async function checkNowPlaying() {
             elements.albumArt.src = data.item.album.images[0].url;
             elements.backgroundArt.style.backgroundImage = `url(${data.item.album.images[0].url})`;
             
-            // Update playing state
-            isPlaying = data.is_playing;
+            // Update playing state and reset auto-pause flag if user manually changed state
+            if (isPlaying !== data.is_playing) {
+                isPlaying = data.is_playing;
+                if (!data.is_playing) {
+                    wasAutoPaused = false; // User manually paused
+                }
+            }
 
             // Update play/pause icon
             elements.playPauseIcon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
@@ -156,9 +196,35 @@ async function checkNowPlaying() {
             if (audioState.isPlaying && !data.is_playing) {
                 elements.trackName.textContent += ' (Auto-paused)';
             }
+        } else {
+            const elements = {
+                nowPlaying: document.getElementById('now-playing'),
+                trackName: document.getElementById('track-name'),
+                artistName: document.getElementById('artist-name')
+            };
+
+            if (elements.nowPlaying) {
+                elements.nowPlaying.style.display = 'block';
+                elements.trackName.innerHTML = '<a href="spotify://" class="spotify-link">Open Spotify Desktop</a>';
+                elements.trackName.classList.add('instruction');
+                elements.artistName.textContent = 'Start playing music to see controls';
+                elements.artistName.classList.add('instruction');
+            }
         }
     } catch (error) {
         console.error('Error in checkNowPlaying:', error);
+        // Show error message instead of logging out
+        const elements = {
+            nowPlaying: document.getElementById('now-playing'),
+            trackName: document.getElementById('track-name'),
+            artistName: document.getElementById('artist-name')
+        };
+
+        if (elements.nowPlaying) {
+            elements.nowPlaying.style.display = 'block';
+            elements.trackName.textContent = 'Connection error';
+            elements.artistName.textContent = 'Please check Spotify connection';
+        }
     }
 }
 
@@ -290,8 +356,9 @@ async function checkBrowserAudio() {
         // Automatically control Spotify playback based on browser audio
         if (response.isPlaying) {
             await pauseSpotify();
-        } else {
-            await playSpotify();  // Uncommented - will auto-resume Spotify
+        } else if (wasAutoPaused) { // Only auto-resume if we auto-paused
+            await playSpotify();
+            wasAutoPaused = false; // Reset the flag
         }
     } catch (error) {
         console.error('Error checking browser audio:', error);
