@@ -356,6 +356,17 @@
             z-index: 2;
             pointer-events: none;
         }
+
+        /* Add new style for powered-by text */
+        .container::after {
+            content: 'Powered by LazyWave - for Spotify';
+            position: absolute;
+            bottom: 3px;
+            left: 5px;
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.3);
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
