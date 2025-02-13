@@ -11,22 +11,33 @@
             font-family: Arial, sans-serif;
             background: #121212;
             color: white;
+            min-height: 160px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .container {
-            display: flex;
+            display: none;
             position: relative;
             padding: 0;
-            gap: 40px;
+            gap: 30px;
             overflow: hidden;
-            min-height: 100%;
+            min-height: 160px;
+            width: 100%;
+        }
+
+        .container.logged-in {
+            display: flex;
         }
 
         .spotify-section {
             flex: 2;
-            padding: 20px 25px;
+            padding: 15px;
             position: relative;
             overflow: hidden;
+            min-height: 110px;
+            width: calc(100% - 30px);
         }
 
         .background-art {
@@ -43,26 +54,13 @@
             z-index: 0;
             mask-image: linear-gradient(to right, 
                 rgba(0,0,0,0.95) 0%,
-                rgba(0,0,0,0.8) 50%,
+                rgba(0,0,0,0.8) 30%,
                 rgba(0,0,0,0) 100%
             );
             -webkit-mask-image: linear-gradient(to right, 
                 rgba(0,0,0,0.95) 0%,
-                rgba(0,0,0,0.8) 50%,
-                rgba(0,0,0,0) 100%
-            );
-        }
-
-        .background-art::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(to right, 
-                rgba(18, 18, 18, 0.3),
-                rgba(18, 18, 18, 0.6)
+                rgba(0,0,0,0.8) 40%,
+                rgba(0,0,0,0) 80%
             );
         }
 
@@ -88,20 +86,21 @@
 
         .audio-section {
             flex: 1;
-            padding: 20px 25px;
+            padding: 15px;
         }
 
         #login-button {
-            width: 100%;
-            padding: 10px;
+            width: 200px;
+            padding: 12px 20px;
             background: #1DB954;
             color: white;
             border: none;
             border-radius: 20px;
             cursor: pointer;
             font-size: 14px;
-            margin-bottom: 15px;
             transition: all 0.3s ease;
+            position: relative;
+            margin: 20px;
         }
 
         #login-button:hover {
@@ -111,47 +110,70 @@
 
         .track-info {
             display: flex;
-            align-items: center;
-            gap: 15px;
+            flex-direction: column;
+            align-items: flex-start;
             position: relative;
             z-index: 1;
+            margin: 10px 0;
+            padding-left: 10px;
+            min-height: 90px;
+            width: calc(100% - 40px);
+        }
+
+        .album-container {
+            position: relative;
+            margin-bottom: 8px;
+            width: 70px;
+            height: 70px;
+            background: #282828;
         }
 
         #album-art {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 4px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #album-art.loaded {
+            opacity: 1;
         }
 
         .track-details {
-            flex-grow: 1;
-            overflow: hidden;
+            min-height: 35px;
+            width: 100%;
+            padding-right: 15px;
         }
 
         #track-name {
             font-size: 14px;
             font-weight: bold;
-            margin: 0;
+            margin: 0 0 3px 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            width: 100%;
         }
 
         #artist-name {
             font-size: 12px;
             color: #b3b3b3;
-            margin: 4px 0;
-        }
-
-        #album-name {
-            font-size: 11px;
-            color: #b3b3b3;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
         }
 
         .playback-controls {
             margin: 15px 0 0 0;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
 
         .control-button {
@@ -166,12 +188,21 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
-            margin: 0 auto;
+        }
+
+        .control-button.secondary {
+            width: 32px;
+            height: 32px;
+            background: rgba(29, 185, 84, 0.2);
         }
 
         .control-button:hover {
             background: #1ed760;
             transform: scale(1.1);
+        }
+
+        .control-button.secondary:hover {
+            background: rgba(29, 185, 84, 0.3);
         }
 
         .section-title {
@@ -182,8 +213,8 @@
         }
 
         #browser-audio-status {
-            font-size: 12px;
-            padding: 10px;
+            font-size: 13px;
+            padding: 12px;
             border-radius: 4px;
             background: rgba(29, 185, 84, 0.1);
             margin-top: 10px;
@@ -196,26 +227,53 @@
         .audio-silent {
             color: #b3b3b3;
         }
+
+        .play-pause-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #play-pause-icon {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 3px;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #play-pause-icon i {
+            color: #1DB954;
+            font-size: 10px;
+        }
     </style>
 </head>
 <body>
+    <button id="login-button">Login with Spotify</button>
+    
     <div class="container">
         <div class="spotify-section">
             <div class="background-art"></div>
-            <button id="login-button">Login with Spotify</button>
             <div id="now-playing" style="display: none;">
                 <div class="track-info">
-                    <img id="album-art" src="" alt="Album Art">
+                    <div class="album-container">
+                        <img id="album-art" src="" alt="Album Art">
+                        <div id="play-pause-icon" class="play-pause-icon">
+                            <i class="fas fa-play" style="font-size: 14px;"></i>
+                        </div>
+                    </div>
                     <div class="track-details">
                         <p id="track-name"></p>
                         <p id="artist-name"></p>
-                        <p id="album-name"></p>
                     </div>
-                </div>
-                <div class="playback-controls">
-                    <button id="play-pause-button" class="control-button">
-                        <i class="fas fa-play"></i>
-                    </button>
                 </div>
             </div>
             <div class="wave-separator">

@@ -32,6 +32,136 @@ async function generateCodeChallenge(codeVerifier) {
         .replace(/\//g, '_');
 }
 
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = await getAccessToken();
+    const container = document.querySelector('.container');
+    const loginButton = document.getElementById('login-button');
+
+    if (token) {
+        loginButton.style.display = 'none';
+        container.classList.add('logged-in');
+        
+        checkNowPlaying();
+        setInterval(checkNowPlaying, 1000);
+        
+        // Start checking browser audio only after login
+        checkBrowserAudio();
+        setInterval(checkBrowserAudio, 1000);
+    } else {
+        loginButton.style.display = 'block';
+        container.classList.remove('logged-in');
+    }
+});
+
+let isPlaying = false;
+
+async function getAccessToken() {
+    const result = await chrome.storage.local.get(['spotify_access_token']);
+    return result.spotify_access_token;
+}
+
+async function pauseSpotify() {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/player/pause', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (response.ok) {
+            isPlaying = false;
+        }
+    } catch (error) {
+        console.error('Error pausing Spotify:', error);
+    }
+}
+
+async function playSpotify() {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/player/play', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (response.ok) {
+            isPlaying = true;
+        }
+    } catch (error) {
+        console.error('Error playing Spotify:', error);
+    }
+}
+
+async function checkNowPlaying() {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/player', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (response.status === 204) {
+            const nowPlayingElement = document.getElementById('now-playing');
+            if (nowPlayingElement) {
+                nowPlayingElement.style.display = 'none';
+            }
+            return;
+        }
+
+        const data = await response.json();
+        if (data && data.item) {
+            const elements = {
+                nowPlaying: document.getElementById('now-playing'),
+                trackName: document.getElementById('track-name'),
+                artistName: document.getElementById('artist-name'),
+                albumArt: document.getElementById('album-art'),
+                backgroundArt: document.querySelector('.background-art'),
+                playPauseIcon: document.getElementById('play-pause-icon').querySelector('i')
+            };
+
+            // Check if all elements exist
+            if (!Object.values(elements).every(el => el)) {
+                console.error('Some elements not found in the DOM');
+                return;
+            }
+
+            elements.nowPlaying.style.display = 'block';
+            elements.trackName.textContent = data.item.name;
+            elements.artistName.textContent = data.item.artists.map(artist => artist.name).join(', ');
+            elements.albumArt.onload = function() {
+                this.classList.add('loaded');
+            };
+            elements.albumArt.src = data.item.album.images[0].url;
+            elements.backgroundArt.style.backgroundImage = `url(${data.item.album.images[0].url})`;
+            
+            // Update playing state
+            isPlaying = data.is_playing;
+
+            // Update play/pause icon
+            elements.playPauseIcon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+
+            // Add status message if Spotify was auto-paused
+            const audioState = await chrome.runtime.sendMessage({ action: "getAudioState" });
+            if (audioState.isPlaying && !data.is_playing) {
+                elements.trackName.textContent += ' (Auto-paused)';
+            }
+        }
+    } catch (error) {
+        console.error('Error in checkNowPlaying:', error);
+    }
+}
+
 document.getElementById('login-button').addEventListener('click', async () => {
     const codeVerifier = generateCodeVerifier(128);
     const codeChallenge = await generateCodeChallenge(codeVerifier);
@@ -114,9 +244,19 @@ document.getElementById('login-button').addEventListener('click', async () => {
             'spotify_token_expiry': Date.now() + (data.expires_in * 1000)
         });
 
-        checkNowPlaying();
-        document.getElementById('login-button').style.display = 'none';
-        document.getElementById('now-playing').style.display = 'block';
+        if (data.access_token) {
+            const container = document.querySelector('.container');
+            const loginButton = document.getElementById('login-button');
+            
+            loginButton.style.display = 'none';
+            container.classList.add('logged-in');
+            
+            checkNowPlaying();
+            
+            // Start the audio checks only after successful login
+            checkBrowserAudio();
+            setInterval(checkBrowserAudio, 1000);
+        }
 
     } catch (error) {
         console.error('Detailed authentication error:', error);
@@ -125,137 +265,34 @@ document.getElementById('login-button').addEventListener('click', async () => {
     }
 });
 
-let isPlaying = false;
+// Add browser audio detection
+const audioStatusElement = document.getElementById('browser-audio-status');
 
-async function getAccessToken() {
-    const result = await chrome.storage.local.get(['spotify_access_token']);
-    return result.spotify_access_token;
-}
-
-async function togglePlayPause() {
-    const accessToken = await getAccessToken();
-    const button = document.getElementById('play-pause-button');
-    const icon = button.querySelector('i');
-    
-    if (!accessToken) return;
-
-    try {
-        if (!isPlaying) {
-            const response = await fetch('https://api.spotify.com/v1/me/player/play', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (response.status === 404) {
-                alert('No active device found. Please open Spotify first.');
-            } else if (response.ok) {
-                isPlaying = true;
-                icon.className = 'fas fa-pause';
-            }
-        } else {
-            const response = await fetch('https://api.spotify.com/v1/me/player/pause', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (response.ok) {
-                isPlaying = false;
-                icon.className = 'fas fa-play';
-            }
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-async function checkNowPlaying() {
-    const accessToken = await getAccessToken();
-    if (!accessToken) return;
-
-    try {
-        const response = await fetch('https://api.spotify.com/v1/me/player', {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
-
-        if (response.status === 204) {
-            document.getElementById('now-playing').style.display = 'none';
-            return;
-        }
-
-        const data = await response.json();
-        if (data && data.item) {
-            document.getElementById('now-playing').style.display = 'block';
-            document.getElementById('track-name').textContent = data.item.name;
-            document.getElementById('artist-name').textContent = data.item.artists.map(artist => artist.name).join(', ');
-            document.getElementById('album-name').textContent = data.item.album.name;
-            document.getElementById('album-art').src = data.item.album.images[0].url;
-            document.querySelector('.background-art').style.backgroundImage = `url(${data.item.album.images[0].url})`;
-            
-            const icon = document.querySelector('#play-pause-button i');
-            if (icon) {
-                isPlaying = data.is_playing;
-                icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
-            }
-
-            // Add status message if Spotify was auto-paused
-            const audioState = await chrome.runtime.sendMessage({ action: "getAudioState" });
-            if (audioState.isPlaying && !data.is_playing) {
-                document.getElementById('track-name').textContent += ' (Auto-paused)';
-            }
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    const playPauseButton = document.getElementById('play-pause-button');
-    if (playPauseButton) {
-        playPauseButton.addEventListener('click', togglePlayPause);
-    }
-
-    const token = await getAccessToken();
-    if (token) {
-        document.getElementById('login-button').style.display = 'none';
-        checkNowPlaying();
-        setInterval(checkNowPlaying, 1000);
+function updateAudioUI(audioState) {
+    if (audioState.isPlaying) {
+        audioStatusElement.textContent = `Playing audio: ${audioState.tabTitle}`;
+        audioStatusElement.classList.add('audio-playing');
+        audioStatusElement.classList.remove('audio-silent');
     } else {
-        document.getElementById('login-button').style.display = 'block';
-        document.getElementById('now-playing').style.display = 'none';
+        audioStatusElement.textContent = 'No browser audio playing';
+        audioStatusElement.classList.add('audio-silent');
+        audioStatusElement.classList.remove('audio-playing');
     }
+}
 
-    // Add browser audio detection
-    const audioStatusElement = document.getElementById('browser-audio-status');
+async function checkBrowserAudio() {
+    try {
+        const response = await chrome.runtime.sendMessage({ action: "getAudioState" });
+        updateAudioUI(response);
 
-    function updateAudioUI(audioState) {
-        if (audioState.isPlaying) {
-            audioStatusElement.textContent = `Playing audio: ${audioState.tabTitle}`;
-            audioStatusElement.classList.add('audio-playing');
-            audioStatusElement.classList.remove('audio-silent');
+        // Automatically control Spotify playback based on browser audio
+        if (response.isPlaying) {
+            await pauseSpotify();
         } else {
-            audioStatusElement.textContent = 'No browser audio playing';
-            audioStatusElement.classList.add('audio-silent');
-            audioStatusElement.classList.remove('audio-playing');
+            await playSpotify();  // Uncommented - will auto-resume Spotify
         }
+    } catch (error) {
+        console.error('Error checking browser audio:', error);
+        audioStatusElement.textContent = 'Error checking audio status';
     }
-
-    async function checkBrowserAudio() {
-        try {
-            const response = await chrome.runtime.sendMessage({ action: "getAudioState" });
-            updateAudioUI(response);
-        } catch (error) {
-            console.error('Error checking browser audio:', error);
-            audioStatusElement.textContent = 'Error checking audio status';
-        }
-    }
-
-    // Start checking browser audio
-    checkBrowserAudio();
-    setInterval(checkBrowserAudio, 1000);
-}); 
+} 
