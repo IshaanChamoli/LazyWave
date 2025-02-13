@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Controller</title>
+    <title>LazyWave</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -15,6 +15,26 @@
             color: white;
         }
 
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #282828;
+        }
+
+        .header img {
+            width: 32px;
+            height: 32px;
+            margin-right: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #1DB954;
+        }
+
         #login-button {
             width: 100%;
             padding: 12px;
@@ -24,11 +44,12 @@
             border-radius: 24px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
         }
 
         #login-button:hover {
             background: #1ed760;
+            transform: scale(1.02);
         }
 
         #now-playing {
@@ -82,6 +103,7 @@
             justify-content: center;
             transition: all 0.3s;
             margin: 0 auto;
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
         }
 
         .control-button:hover {
@@ -99,10 +121,22 @@
             margin-top: 20px;
             font-size: 14px;
         }
+
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <button id="login-button">Connect Spotify</button>
+    <div class="header">
+        <img src="icon128.png" alt="LazyWave">
+        <h1>LazyWave</h1>
+    </div>
+
+    <button id="login-button">Connect with Spotify</button>
     
     <div id="now-playing">
         <img id="album-art" class="album-art" src="" alt="Album Art">
@@ -114,6 +148,10 @@
                 <i class="fas fa-play"></i>
             </button>
         </div>
+    </div>
+
+    <div class="footer">
+        Powered by Spotify
     </div>
 
     <script src="popup.js"></script>

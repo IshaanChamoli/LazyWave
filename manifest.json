@@ -1,20 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Spotify Controller",
+  "name": "LazyWave",
   "version": "1.0",
-  "description": "Control Spotify playback from your browser",
-  "permissions": ["storage"],
+  "description": "Control Spotify playback directly from your browser",
+  "permissions": [
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://accounts.spotify.com/*",
+    "https://api.spotify.com/*"
+  ],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": {
-      "16": "images/icon16.png",
-      "48": "images/icon48.png",
-      "128": "images/icon128.png"
-    }
+    "default_icon": "icon128.png"
   },
   "icons": {
-    "16": "images/icon16.png",
-    "48": "images/icon48.png",
-    "128": "images/icon128.png"
-  }
+    "128": "icon128.png"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxH5hOiRBXOg4I3mE7YG5TeuOqCXQQf5JTH5pK4ywxvKrHjYtHxJTxVEUeD8KGqruqDV/9N3HJtGbWQYZbXEVjpQtYHoUkP0KaIqKk+IMBZJdkOnJ+wGzGcKcZjvM9WoHXyoGz9GBjTDYDZhcEHr0xy9T9dpvH3HXsZqeEIo6QIDAQAB"
 } 
