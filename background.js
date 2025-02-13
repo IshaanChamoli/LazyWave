@@ -1,7 +1,8 @@
 let currentAudioState = {
     isPlaying: false,
     tabTitle: '',
-    tabId: null
+    tabId: null,
+    lastStateChange: Date.now()
 };
 
 // Function to update extension icon and badge
@@ -17,6 +18,30 @@ async function updateExtensionIcon(isPlaying) {
         }
     } catch (error) {
         console.error('Error updating icon:', error);
+    }
+}
+
+// Function to control Spotify playback
+async function controlSpotifyPlayback(shouldPlay) {
+    try {
+        const result = await chrome.storage.local.get(['spotify_access_token']);
+        const accessToken = result.spotify_access_token;
+        
+        if (!accessToken) return;
+
+        const endpoint = shouldPlay ? 'play' : 'pause';
+        const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (response.status === 404) {
+            console.log('No active Spotify device found');
+        }
+    } catch (error) {
+        console.error('Error controlling Spotify:', error);
     }
 }
 
@@ -36,10 +61,25 @@ async function checkAudioStatus() {
             }
         }
 
+        // Check if state has changed
+        if (isPlayingInAnyTab !== currentAudioState.isPlaying) {
+            // Control Spotify based on audio state
+            if (isPlayingInAnyTab) {
+                // Other audio started playing, pause Spotify
+                await controlSpotifyPlayback(false);
+            } else {
+                // Other audio stopped, resume Spotify
+                await controlSpotifyPlayback(true);
+            }
+            
+            currentAudioState.lastStateChange = Date.now();
+        }
+
         currentAudioState = {
             isPlaying: isPlayingInAnyTab,
             tabTitle: playingTabTitle,
-            tabId: playingTabId
+            tabId: playingTabId,
+            lastStateChange: currentAudioState.lastStateChange
         };
 
         // Update the extension icon when audio state changes

@@ -197,6 +197,12 @@ async function checkNowPlaying() {
                 isPlaying = data.is_playing;
                 icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
             }
+
+            // Add status message if Spotify was auto-paused
+            const audioState = await chrome.runtime.sendMessage({ action: "getAudioState" });
+            if (audioState.isPlaying && !data.is_playing) {
+                document.getElementById('track-name').textContent += ' (Auto-paused)';
+            }
         }
     } catch (error) {
         console.error('Error:', error);
