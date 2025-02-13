@@ -121,8 +121,7 @@ async function checkNowPlaying() {
                 trackName: document.getElementById('track-name'),
                 artistName: document.getElementById('artist-name'),
                 albumArt: document.getElementById('album-art'),
-                backgroundArt: document.querySelector('.background-art'),
-                playPauseIcon: document.getElementById('play-pause-icon').querySelector('i')
+                backgroundArt: document.querySelector('.background-art')
             };
 
             if (elements.nowPlaying) {
@@ -133,23 +132,6 @@ async function checkNowPlaying() {
                 elements.artistName.classList.add('instruction');
                 elements.albumArt.src = 'icon128.png';
                 elements.backgroundArt.style.backgroundImage = 'none';
-                elements.playPauseIcon.className = 'fas fa-play';
-
-                // Add click handler for the link
-                const spotifyLink = elements.trackName.querySelector('.spotify-link');
-                if (spotifyLink) {
-                    spotifyLink.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        try {
-                            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                            if (tab) {
-                                await chrome.tabs.update(tab.id, { url: spotifyLink.href });
-                            }
-                        } catch (error) {
-                            console.error('Failed to open Spotify:', error);
-                        }
-                    });
-                }
             }
             return;
         }
@@ -161,8 +143,7 @@ async function checkNowPlaying() {
                 trackName: document.getElementById('track-name'),
                 artistName: document.getElementById('artist-name'),
                 albumArt: document.getElementById('album-art'),
-                backgroundArt: document.querySelector('.background-art'),
-                playPauseIcon: document.getElementById('play-pause-icon').querySelector('i')
+                backgroundArt: document.querySelector('.background-art')
             };
 
             // Check if all elements exist
@@ -188,12 +169,9 @@ async function checkNowPlaying() {
                 }
             }
 
-            // Update play/pause icon
-            elements.playPauseIcon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
-
             // Add status message if Spotify was auto-paused
             const audioState = await chrome.runtime.sendMessage({ action: "getAudioState" });
-            if (audioState.isPlaying && !data.is_playing) {
+            if (audioState.isPlaying && !data.is_playing && wasAutoPaused) {
                 elements.trackName.textContent += ' (Auto-paused)';
             }
         } else {
@@ -336,7 +314,13 @@ const audioStatusElement = document.getElementById('browser-audio-status');
 
 function updateAudioUI(audioState) {
     if (audioState.isPlaying) {
-        audioStatusElement.textContent = `Playing audio: ${audioState.tabTitle}`;
+        // Truncate long titles but keep format
+        const maxLength = 40; // Adjust this value to match the default size
+        const truncatedTitle = audioState.tabTitle.length > maxLength 
+            ? audioState.tabTitle.substring(0, maxLength) + '...' 
+            : audioState.tabTitle;
+            
+        audioStatusElement.textContent = `Playing audio: ${truncatedTitle}`;
         audioStatusElement.classList.add('audio-playing');
         audioStatusElement.classList.remove('audio-silent');
         document.querySelector('.audio-wave').style.opacity = '0.15';
@@ -348,17 +332,17 @@ function updateAudioUI(audioState) {
     }
 }
 
+// Update checkBrowserAudio to remove toggle check
 async function checkBrowserAudio() {
     try {
         const response = await chrome.runtime.sendMessage({ action: "getAudioState" });
         updateAudioUI(response);
 
-        // Automatically control Spotify playback based on browser audio
         if (response.isPlaying) {
             await pauseSpotify();
-        } else if (wasAutoPaused) { // Only auto-resume if we auto-paused
+        } else if (wasAutoPaused && isPlaying) {
             await playSpotify();
-            wasAutoPaused = false; // Reset the flag
+            wasAutoPaused = false;
         }
     } catch (error) {
         console.error('Error checking browser audio:', error);

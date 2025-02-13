@@ -21,7 +21,7 @@
             display: none;
             position: relative;
             padding: 0;
-            gap: 30px;
+            gap: 0;
             overflow: hidden;
             min-height: 160px;
             width: 100%;
@@ -32,12 +32,13 @@
         }
 
         .spotify-section {
-            flex: 2;
+            flex: 1.8;
             padding: 15px;
             position: relative;
             overflow: hidden;
             min-height: 110px;
-            width: calc(100% - 30px);
+            width: calc(100% - 45px);
+            padding-right: 30px;
         }
 
         .background-art {
@@ -66,12 +67,13 @@
 
         .wave-separator {
             position: absolute;
-            right: 0;
+            right: 13px;
             top: 0;
             bottom: 0;
             width: 30px;
             display: flex;
             align-items: center;
+            z-index: 3;
         }
 
         .wave-line {
@@ -85,14 +87,44 @@
         }
 
         .audio-section {
-            flex: 1;
+            flex: 1.2;
             padding: 15px;
             position: relative;
-            background: rgba(29, 185, 84, 0.03);
-            border-radius: 8px;
+            border-radius: 0;
             min-height: 110px;
             display: flex;
             flex-direction: column;
+            margin-left: -15px;
+            padding-left: 30px;
+        }
+
+        /* Add new style for the background */
+        .audio-background {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: rgba(29, 185, 84, 0.07);
+            z-index: 0;
+            mask-image: linear-gradient(to left, 
+                rgba(0,0,0,0.95) 0%,
+                rgba(0,0,0,0.95) 20%,
+                rgba(0,0,0,0.8) 60%,
+                rgba(0,0,0,0) 90%
+            );
+            -webkit-mask-image: linear-gradient(to left, 
+                rgba(0,0,0,0.95) 0%,
+                rgba(0,0,0,0.95) 20%,
+                rgba(0,0,0,0.8) 60%,
+                rgba(0,0,0,0) 90%
+            );
+        }
+
+        /* Ensure content stays above the background */
+        .section-title, #browser-audio-status {
+            position: relative;
+            z-index: 1;
         }
 
         #login-button {
@@ -232,6 +264,8 @@
             align-items: center;
             transition: all 0.3s ease;
             border: 1px solid rgba(29, 185, 84, 0.1);
+            min-height: 20px;
+            line-height: 20px;
         }
 
         .audio-playing {
@@ -242,33 +276,6 @@
 
         .audio-silent {
             color: #b3b3b3;
-        }
-
-        .play-pause-icon {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #play-pause-icon {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 3px;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #play-pause-icon i {
-            color: #1DB954;
-            font-size: 10px;
         }
 
         /* Add wave effect for audio section */
@@ -343,9 +350,6 @@
                 <div class="track-info">
                     <div class="album-container">
                         <img id="album-art" src="" alt="Album Art">
-                        <div id="play-pause-icon" class="play-pause-icon">
-                            <i class="fas fa-play" style="font-size: 14px;"></i>
-                        </div>
                     </div>
                     <div class="track-details">
                         <p id="track-name"></p>
@@ -359,6 +363,7 @@
         </div>
 
         <div class="audio-section">
+            <div class="audio-background"></div>
             <div class="audio-wave"></div>
             <div class="section-title">Browser Audio</div>
             <div id="browser-audio-status" class="audio-silent">

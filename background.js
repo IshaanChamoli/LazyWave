@@ -5,16 +5,20 @@ let currentAudioState = {
     lastStateChange: Date.now()
 };
 
+let spotifyPlaybackState = false;
+
 // Function to update extension icon and badge
-async function updateExtensionIcon(isPlaying) {
+async function updateExtensionIcon() {
     try {
-        // Update badge
-        if (isPlaying) {
-            chrome.action.setBadgeText({ text: "ON" });
-            chrome.action.setBadgeBackgroundColor({ color: "#1DB954" }); // Using LazyWave green
+        // Update badge based on Spotify playback state
+        if (spotifyPlaybackState) {
+            chrome.action.setBadgeText({ text: "❚❚" });
+            chrome.action.setBadgeBackgroundColor({ color: "#1DB954" });
             chrome.action.setBadgeTextColor({ color: "#FFFFFF" });
         } else {
-            chrome.action.setBadgeText({ text: "" });
+            chrome.action.setBadgeText({ text: "►" });
+            chrome.action.setBadgeBackgroundColor({ color: "#1DB954" });
+            chrome.action.setBadgeTextColor({ color: "#FFFFFF" });
         }
     } catch (error) {
         console.error('Error updating icon:', error);
@@ -45,6 +49,33 @@ async function controlSpotifyPlayback(shouldPlay) {
     }
 }
 
+// Add function to check Spotify state
+async function checkSpotifyState() {
+    try {
+        const result = await chrome.storage.local.get(['spotify_access_token']);
+        const accessToken = result.spotify_access_token;
+        
+        if (!accessToken) return;
+
+        const response = await fetch('https://api.spotify.com/v1/me/player', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (response.status === 204) {
+            spotifyPlaybackState = false;
+        } else {
+            const data = await response.json();
+            spotifyPlaybackState = data?.is_playing || false;
+        }
+
+        updateExtensionIcon();
+    } catch (error) {
+        console.error('Error checking Spotify state:', error);
+    }
+}
+
 async function checkAudioStatus() {
     try {
         const tabs = await chrome.tabs.query({});
@@ -65,10 +96,8 @@ async function checkAudioStatus() {
         if (isPlayingInAnyTab !== currentAudioState.isPlaying) {
             // Control Spotify based on audio state
             if (isPlayingInAnyTab) {
-                // Other audio started playing, pause Spotify
                 await controlSpotifyPlayback(false);
             } else {
-                // Other audio stopped, resume Spotify
                 await controlSpotifyPlayback(true);
             }
             
@@ -82,17 +111,19 @@ async function checkAudioStatus() {
             lastStateChange: currentAudioState.lastStateChange
         };
 
-        // Update the extension icon when audio state changes
-        updateExtensionIcon(isPlayingInAnyTab);
+        // Check Spotify state after controlling playback
+        await checkSpotifyState();
 
     } catch (error) {
         console.error('Error checking audio status:', error);
     }
 }
 
-// Start checking audio status
+// Start checking both states
 checkAudioStatus();
+checkSpotifyState();
 setInterval(checkAudioStatus, 1000);
+setInterval(checkSpotifyState, 1000);
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
