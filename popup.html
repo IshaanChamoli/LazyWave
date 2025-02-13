@@ -73,7 +73,7 @@
             width: 30px;
             display: flex;
             align-items: center;
-            z-index: 3;
+            z-index: 4;
         }
 
         .wave-line {
@@ -337,6 +337,24 @@
         .spotify-link:hover {
             color: #1ed760;
             text-decoration: underline;
+        }
+
+        /* Add new style for dimmed state */
+        .spotify-section.dimmed {
+            opacity: 0.5;
+            position: relative;
+        }
+
+        .spotify-section.dimmed::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 2;
+            pointer-events: none;
         }
     </style>
 </head>

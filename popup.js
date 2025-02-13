@@ -313,9 +313,11 @@ document.getElementById('login-button').addEventListener('click', async () => {
 const audioStatusElement = document.getElementById('browser-audio-status');
 
 function updateAudioUI(audioState) {
+    const spotifySection = document.querySelector('.spotify-section');
+
     if (audioState.isPlaying) {
         // Truncate long titles but keep format
-        const maxLength = 40; // Adjust this value to match the default size
+        const maxLength = 40;
         const truncatedTitle = audioState.tabTitle.length > maxLength 
             ? audioState.tabTitle.substring(0, maxLength) + '...' 
             : audioState.tabTitle;
@@ -324,11 +326,17 @@ function updateAudioUI(audioState) {
         audioStatusElement.classList.add('audio-playing');
         audioStatusElement.classList.remove('audio-silent');
         document.querySelector('.audio-wave').style.opacity = '0.15';
+        
+        // Dim Spotify section
+        spotifySection.classList.add('dimmed');
     } else {
         audioStatusElement.textContent = 'No browser audio playing';
         audioStatusElement.classList.add('audio-silent');
         audioStatusElement.classList.remove('audio-playing');
         document.querySelector('.audio-wave').style.opacity = '0.1';
+        
+        // Remove dim from Spotify section
+        spotifySection.classList.remove('dimmed');
     }
 }
 
