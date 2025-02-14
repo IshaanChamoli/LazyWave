@@ -13,15 +13,22 @@ let spotifyInterval = null;  // Store intervals in global variables instead of w
 // Function to update extension icon and badge
 async function updateExtensionIcon() {
     try {
-        // Update badge based on Spotify playback state
-        if (spotifyPlaybackState) {
-            chrome.action.setBadgeText({ text: "❚❚" });
-            chrome.action.setBadgeBackgroundColor({ color: "#1DB954" });
+        if (isCheckingPaused) {
+            // Show red exclamation mark when disabled
+            chrome.action.setBadgeText({ text: "!" });
+            chrome.action.setBadgeBackgroundColor({ color: "#ff4444" });
             chrome.action.setBadgeTextColor({ color: "#FFFFFF" });
         } else {
-            chrome.action.setBadgeText({ text: "►" });
-            chrome.action.setBadgeBackgroundColor({ color: "#1DB954" });
-            chrome.action.setBadgeTextColor({ color: "#FFFFFF" });
+            // Normal Spotify state badges
+            if (spotifyPlaybackState) {
+                chrome.action.setBadgeText({ text: "❚❚" });
+                chrome.action.setBadgeBackgroundColor({ color: "#1DB954" });
+                chrome.action.setBadgeTextColor({ color: "#FFFFFF" });
+            } else {
+                chrome.action.setBadgeText({ text: "►" });
+                chrome.action.setBadgeBackgroundColor({ color: "#1DB954" });
+                chrome.action.setBadgeTextColor({ color: "#FFFFFF" });
+            }
         }
     } catch (error) {
         console.error('Error updating icon:', error);
