@@ -35,7 +35,7 @@ async function generateCodeChallenge(codeVerifier) {
 // Add this at the top of popup.js with other state variables
 let isExtensionActive = true;
 
-// Replace the initializeToggleHandler function
+// Update the initializeToggleHandler function
 function initializeToggleHandler() {
     const toggleButton = document.getElementById('toggle-extension');
     if (!toggleButton) return;
@@ -64,6 +64,9 @@ function initializeToggleHandler() {
             // Tell background script to pause checking
             chrome.runtime.sendMessage({ action: "pauseChecking" });
         } else {
+            // Tell background script to resume checking first
+            await chrome.runtime.sendMessage({ action: "resumeChecking" });
+            
             // Re-enable functionality
             container.classList.remove('disabled');
             toggleText.textContent = 'Disable Extension';
