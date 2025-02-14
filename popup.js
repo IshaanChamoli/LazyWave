@@ -56,16 +56,84 @@ document.addEventListener('DOMContentLoaded', async () => {
 let isPlaying = false;
 let wasAutoPaused = false;
 
-async function getAccessToken() {
-    const result = await chrome.storage.local.get(['spotify_access_token']);
-    return result.spotify_access_token;
+// Add the refreshTokenIfNeeded function
+async function refreshTokenIfNeeded() {
+    try {
+        const storage = await chrome.storage.local.get([
+            'spotify_access_token',
+            'spotify_refresh_token',
+            'spotify_token_expiry'
+        ]);
+
+        const now = Date.now();
+        // Check if token is expired or will expire in the next minute
+        if (storage.spotify_token_expiry && now >= storage.spotify_token_expiry - 60000) {
+            if (!storage.spotify_refresh_token) {
+                throw new Error('No refresh token available');
+            }
+
+            const response = await fetch('https://accounts.spotify.com/api/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    refresh_token: storage.spotify_refresh_token,
+                    client_id: clientId,
+                }),
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(`Token refresh error: ${data.error}`);
+            }
+
+            // Store new tokens
+            await chrome.storage.local.set({
+                'spotify_access_token': data.access_token,
+                'spotify_token_expiry': Date.now() + (data.expires_in * 1000)
+            });
+
+            // If a new refresh token was provided, store it
+            if (data.refresh_token) {
+                await chrome.storage.local.set({
+                    'spotify_refresh_token': data.refresh_token
+                });
+            }
+
+            return data.access_token;
+        }
+
+        return storage.spotify_access_token;
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        // Clear tokens if refresh failed
+        await chrome.storage.local.remove([
+            'spotify_access_token',
+            'spotify_refresh_token',
+            'spotify_token_expiry'
+        ]);
+        throw error;
+    }
 }
 
-async function pauseSpotify() {
-    const accessToken = await getAccessToken();
-    if (!accessToken) return;
-
+// Update getAccessToken to use refresh mechanism
+async function getAccessToken() {
     try {
+        return await refreshTokenIfNeeded();
+    } catch (error) {
+        console.error('Error getting access token:', error);
+        return null;
+    }
+}
+
+// Update pauseSpotify function
+async function pauseSpotify() {
+    try {
+        const accessToken = await refreshTokenIfNeeded();
+        if (!accessToken) return;
+
         const response = await fetch('https://api.spotify.com/v1/me/player/pause', {
             method: 'PUT',
             headers: {
@@ -76,17 +144,25 @@ async function pauseSpotify() {
         if (response.ok) {
             isPlaying = false;
             wasAutoPaused = true;
+        } else if (response.status === 401) {
+            // Token might be invalid, clear it
+            await chrome.storage.local.remove([
+                'spotify_access_token',
+                'spotify_refresh_token',
+                'spotify_token_expiry'
+            ]);
         }
     } catch (error) {
         console.error('Error pausing Spotify:', error);
     }
 }
 
+// Update playSpotify function
 async function playSpotify() {
-    const accessToken = await getAccessToken();
-    if (!accessToken) return;
-
     try {
+        const accessToken = await refreshTokenIfNeeded();
+        if (!accessToken) return;
+
         const response = await fetch('https://api.spotify.com/v1/me/player/play', {
             method: 'PUT',
             headers: {
@@ -96,23 +172,43 @@ async function playSpotify() {
 
         if (response.ok) {
             isPlaying = true;
+        } else if (response.status === 401) {
+            // Token might be invalid, clear it
+            await chrome.storage.local.remove([
+                'spotify_access_token',
+                'spotify_refresh_token',
+                'spotify_token_expiry'
+            ]);
         }
     } catch (error) {
         console.error('Error playing Spotify:', error);
     }
 }
 
-// Update the checkNowPlaying function
+// Update checkNowPlaying function
 async function checkNowPlaying() {
-    const accessToken = await getAccessToken();
-    if (!accessToken) return;
-
     try {
+        const accessToken = await refreshTokenIfNeeded();
+        if (!accessToken) return;
+
         const response = await fetch('https://api.spotify.com/v1/me/player', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
         });
+
+        // Handle 401 Unauthorized specifically
+        if (response.status === 401) {
+            await chrome.storage.local.remove([
+                'spotify_access_token',
+                'spotify_refresh_token',
+                'spotify_token_expiry'
+            ]);
+            // Show login button
+            document.getElementById('login-button').style.display = 'block';
+            document.querySelector('.container').classList.remove('logged-in');
+            return;
+        }
 
         // If no active device or no data
         if (response.status === 204 || response.status === 404) {
@@ -205,7 +301,7 @@ async function checkNowPlaying() {
         }
     } catch (error) {
         console.error('Error in checkNowPlaying:', error);
-        // Show error message instead of logging out
+        // Show error message in the UI
         const elements = {
             nowPlaying: document.getElementById('now-playing'),
             trackName: document.getElementById('track-name'),

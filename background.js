@@ -25,12 +25,72 @@ async function updateExtensionIcon() {
     }
 }
 
+// Add this function to handle token refresh
+async function refreshTokenIfNeeded() {
+    try {
+        const storage = await chrome.storage.local.get([
+            'spotify_access_token',
+            'spotify_refresh_token',
+            'spotify_token_expiry'
+        ]);
+
+        const now = Date.now();
+        // Check if token is expired or will expire in the next minute
+        if (storage.spotify_token_expiry && now >= storage.spotify_token_expiry - 60000) {
+            if (!storage.spotify_refresh_token) {
+                throw new Error('No refresh token available');
+            }
+
+            const response = await fetch('https://accounts.spotify.com/api/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    refresh_token: storage.spotify_refresh_token,
+                    client_id: '264a5ade3f104c2f9419ff2e0fcf307b',
+                }),
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(`Token refresh error: ${data.error}`);
+            }
+
+            // Store new tokens
+            await chrome.storage.local.set({
+                'spotify_access_token': data.access_token,
+                'spotify_token_expiry': Date.now() + (data.expires_in * 1000)
+            });
+
+            // If a new refresh token was provided, store it
+            if (data.refresh_token) {
+                await chrome.storage.local.set({
+                    'spotify_refresh_token': data.refresh_token
+                });
+            }
+
+            return data.access_token;
+        }
+
+        return storage.spotify_access_token;
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        // Clear tokens if refresh failed
+        await chrome.storage.local.remove([
+            'spotify_access_token',
+            'spotify_refresh_token',
+            'spotify_token_expiry'
+        ]);
+        throw error;
+    }
+}
+
 // Function to control Spotify playback
 async function controlSpotifyPlayback(shouldPlay) {
     try {
-        const result = await chrome.storage.local.get(['spotify_access_token']);
-        const accessToken = result.spotify_access_token;
-        
+        const accessToken = await refreshTokenIfNeeded();
         if (!accessToken) return;
 
         const endpoint = shouldPlay ? 'play' : 'pause';
@@ -43,18 +103,23 @@ async function controlSpotifyPlayback(shouldPlay) {
 
         if (response.status === 404) {
             console.log('No active Spotify device found');
+        } else if (response.status === 401) {
+            // Token might be invalid, clear it
+            await chrome.storage.local.remove([
+                'spotify_access_token',
+                'spotify_refresh_token',
+                'spotify_token_expiry'
+            ]);
         }
     } catch (error) {
         console.error('Error controlling Spotify:', error);
     }
 }
 
-// Add function to check Spotify state
+// Update checkSpotifyState to use token refresh
 async function checkSpotifyState() {
     try {
-        const result = await chrome.storage.local.get(['spotify_access_token']);
-        const accessToken = result.spotify_access_token;
-        
+        const accessToken = await refreshTokenIfNeeded();
         if (!accessToken) return;
 
         const response = await fetch('https://api.spotify.com/v1/me/player', {
@@ -65,6 +130,14 @@ async function checkSpotifyState() {
 
         if (response.status === 204) {
             spotifyPlaybackState = false;
+        } else if (response.status === 401) {
+            // Token might be invalid, clear it
+            await chrome.storage.local.remove([
+                'spotify_access_token',
+                'spotify_refresh_token',
+                'spotify_token_expiry'
+            ]);
+            spotifyPlaybackState = false;
         } else {
             const data = await response.json();
             spotifyPlaybackState = data?.is_playing || false;
@@ -73,6 +146,8 @@ async function checkSpotifyState() {
         updateExtensionIcon();
     } catch (error) {
         console.error('Error checking Spotify state:', error);
+        spotifyPlaybackState = false;
+        updateExtensionIcon();
     }
 }
 
