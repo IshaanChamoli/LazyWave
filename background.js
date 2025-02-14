@@ -6,6 +6,7 @@ let currentAudioState = {
 };
 
 let spotifyPlaybackState = false;
+let isCheckingPaused = false;
 
 // Function to update extension icon and badge
 async function updateExtensionIcon() {
@@ -194,16 +195,48 @@ async function checkAudioStatus() {
     }
 }
 
-// Start checking both states
-checkAudioStatus();
-checkSpotifyState();
-setInterval(checkAudioStatus, 1000);
-setInterval(checkSpotifyState, 1000);
+// Update your interval functions
+function startChecking() {
+    checkAudioStatus();
+    checkSpotifyState();
+    if (!isCheckingPaused) {
+        setInterval(() => {
+            if (!isCheckingPaused) checkAudioStatus();
+        }, 1000);
+        setInterval(() => {
+            if (!isCheckingPaused) checkSpotifyState();
+        }, 1000);
+    }
+}
 
-// Listen for messages from the popup
+// Update message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getAudioState") {
         sendResponse(currentAudioState);
     }
+    if (request.action === "pauseChecking") {
+        isCheckingPaused = true;
+        // Reset states
+        currentAudioState = {
+            isPlaying: false,
+            tabTitle: '',
+            tabId: null,
+            lastStateChange: Date.now()
+        };
+        spotifyPlaybackState = false;
+        updateExtensionIcon();
+    }
+    if (request.action === "resumeChecking") {
+        isCheckingPaused = false;
+        startChecking();
+    }
     return true;
+});
+
+// Initialize checking
+chrome.storage.local.get('extension_active', ({ extension_active = true }) => {
+    isCheckingPaused = !extension_active;
+    if (extension_active) {
+        startChecking();
+    }
 }); 

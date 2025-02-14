@@ -6,7 +6,8 @@
   "permissions": [
     "identity",
     "storage",
-    "tabs"
+    "tabs",
+    "management"
   ],
   "host_permissions": [
     "https://accounts.spotify.com/*",

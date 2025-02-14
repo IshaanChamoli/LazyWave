@@ -32,26 +32,108 @@ async function generateCodeChallenge(codeVerifier) {
         .replace(/\//g, '_');
 }
 
+// Add this at the top of popup.js with other state variables
+let isExtensionActive = true;
+
+// Replace the initializeToggleHandler function
+function initializeToggleHandler() {
+    const toggleButton = document.getElementById('toggle-extension');
+    if (!toggleButton) return;
+
+    toggleButton.addEventListener('click', async () => {
+        const container = document.querySelector('.container');
+        const toggleText = toggleButton.querySelector('.toggle-text');
+        const toggleIcon = toggleButton.querySelector('i');
+        
+        // Toggle the extension state
+        isExtensionActive = !isExtensionActive;
+        
+        // Store the state
+        await chrome.storage.local.set({ 'extension_active': isExtensionActive });
+        
+        if (!isExtensionActive) {
+            // Disable functionality
+            container.classList.add('disabled');
+            toggleText.textContent = 'Enable Extension';
+            toggleIcon.style.color = '#1DB954';
+            
+            // Clear any existing intervals
+            if (window.nowPlayingInterval) clearInterval(window.nowPlayingInterval);
+            if (window.browserAudioInterval) clearInterval(window.browserAudioInterval);
+            
+            // Tell background script to pause checking
+            chrome.runtime.sendMessage({ action: "pauseChecking" });
+        } else {
+            // Re-enable functionality
+            container.classList.remove('disabled');
+            toggleText.textContent = 'Disable Extension';
+            toggleIcon.style.color = '#ff4444';
+            
+            // Restart the extension
+            window.location.reload();
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-    const token = await getAccessToken();
     const container = document.querySelector('.container');
     const loginButton = document.getElementById('login-button');
-
+    
+    // Check if extension is active first
+    const { extension_active = true } = await chrome.storage.local.get('extension_active');
+    isExtensionActive = extension_active;
+    
+    if (!isExtensionActive) {
+        // Hide everything except the disabled message and settings
+        loginButton.style.display = 'none';
+        container.classList.add('disabled');
+        const toggleText = document.querySelector('.toggle-text');
+        const toggleIcon = document.querySelector('#toggle-extension i');
+        if (toggleText) toggleText.textContent = 'Enable Extension';
+        if (toggleIcon) toggleIcon.style.color = '#1DB954';
+        
+        // Only initialize the toggle handler and settings icon click
+        initializeToggleHandler();
+        initializeSettingsIcon();
+        return; // Don't initialize anything else
+    }
+    
+    // Normal initialization for enabled state
+    initializeToggleHandler();
+    initializeSettingsIcon();
+    
+    const token = await getAccessToken();
     if (token) {
         loginButton.style.display = 'none';
         container.classList.add('logged-in');
         
         checkNowPlaying();
-        setInterval(checkNowPlaying, 1000);
+        window.nowPlayingInterval = setInterval(checkNowPlaying, 1000);
         
-        // Start checking browser audio only after login
         checkBrowserAudio();
-        setInterval(checkBrowserAudio, 1000);
+        window.browserAudioInterval = setInterval(checkBrowserAudio, 1000);
     } else {
         loginButton.style.display = 'block';
         container.classList.remove('logged-in');
     }
 });
+
+// Separate function for settings icon initialization
+function initializeSettingsIcon() {
+    const settingsIcon = document.querySelector('.settings-icon');
+    const settingsCard = document.querySelector('.settings-card');
+    
+    settingsIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsCard.classList.toggle('visible');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.settings-card') && !e.target.closest('.settings-icon')) {
+            settingsCard.classList.remove('visible');
+        }
+    });
+}
 
 let isPlaying = false;
 let wasAutoPaused = false;

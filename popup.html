@@ -434,12 +434,126 @@
             50% { height: 60%; }
             100% { height: 40%; }
         }
+
+        /* Add these styles for the settings icon */
+        .settings-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 5;
+            transition: color 0.3s ease;
+        }
+
+        .settings-icon:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Add these styles for the settings card */
+        .settings-card {
+            position: absolute;
+            top: 35px;
+            right: 10px;
+            background: #282828;
+            border-radius: 4px;
+            padding: 8px;
+            min-width: 150px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-card.visible {
+            display: block;
+        }
+
+        .settings-option {
+            color: #ffffff;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-option i {
+            font-size: 11px;
+            color: #ff4444;
+        }
+
+        /* Update these styles for the disabled state */
+        .container.disabled {
+            display: flex !important; /* Force display even when not logged in */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            min-height: 160px;
+        }
+
+        .container.disabled > *:not(.disabled-message):not(.settings-icon):not(.settings-card) {
+            display: none !important;
+        }
+
+        .disabled-message {
+            display: none;
+            font-size: 14px;
+            color: #ffffff;
+            opacity: 0.8;
+            line-height: 1.5;
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .container.disabled .disabled-message {
+            display: block;
+        }
+
+        /* Ensure settings icon and card stay visible in disabled state */
+        .settings-icon, .settings-card {
+            z-index: 100;
+        }
+
+        /* Update settings card for enable option */
+        .settings-option.enable {
+            color: #ffffff;
+        }
+
+        .settings-option.enable i {
+            color: #1DB954;  /* Spotify green for enable */
+        }
     </style>
 </head>
 <body>
     <button id="login-button">Login with Spotify</button>
     
     <div class="container">
+        <i class="fas fa-cog settings-icon"></i>
+        <div class="settings-card">
+            <div class="settings-option" id="toggle-extension">
+                <i class="fas fa-power-off"></i>
+                <span class="toggle-text">Disable Extension</span>
+            </div>
+        </div>
+        
+        <div class="disabled-message">
+            LazyWave has been stopped by you,<br>
+            click the settings icon and enable again to get started!
+        </div>
+
         <div class="spotify-section">
             <div class="background-art"></div>
             <div id="now-playing" style="display: none;">
