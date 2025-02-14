@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LazyWave",
   "version": "1.0",
-  "description": "Control Spotify playback directly from your browser",
+  "description": "Auto-pause/play your Spotify when watching something else on your browser!",
   "permissions": [
     "identity",
     "storage",
