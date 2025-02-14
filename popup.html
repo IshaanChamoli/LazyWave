@@ -367,6 +367,73 @@
             color: rgba(255, 255, 255, 0.3);
             z-index: 1;
         }
+
+        .play-indicator {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 16px;
+            background: none;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 0 3px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .play-indicator.playing {
+            opacity: 1;
+        }
+
+        .visualizer-bar {
+            width: 2px;
+            background-color: #1DB954;
+            height: 30%;
+            border-radius: 1px;
+            box-shadow: 0 0 3px rgba(0,0,0,0.5);
+        }
+
+        .visualizer-bar:nth-child(1) {
+            animation: sound1 1.2s infinite;
+        }
+
+        .visualizer-bar:nth-child(2) {
+            animation: sound2 1.7s infinite;
+        }
+
+        .visualizer-bar:nth-child(3) {
+            animation: sound3 1.4s infinite;
+        }
+
+        .visualizer-bar:nth-child(4) {
+            animation: sound4 1.9s infinite;
+        }
+
+        @keyframes sound1 {
+            0% { height: 30%; }
+            50% { height: 70%; }
+            100% { height: 30%; }
+        }
+
+        @keyframes sound2 {
+            0% { height: 50%; }
+            50% { height: 20%; }
+            100% { height: 50%; }
+        }
+
+        @keyframes sound3 {
+            0% { height: 70%; }
+            50% { height: 40%; }
+            100% { height: 70%; }
+        }
+
+        @keyframes sound4 {
+            0% { height: 40%; }
+            50% { height: 60%; }
+            100% { height: 40%; }
+        }
     </style>
 </head>
 <body>
@@ -379,6 +446,12 @@
                 <div class="track-info">
                     <div class="album-container">
                         <img id="album-art" src="" alt="Album Art">
+                        <div class="play-indicator">
+                            <div class="visualizer-bar"></div>
+                            <div class="visualizer-bar"></div>
+                            <div class="visualizer-bar"></div>
+                            <div class="visualizer-bar"></div>
+                        </div>
                     </div>
                     <div class="track-details">
                         <p id="track-name"></p>

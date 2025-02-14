@@ -284,6 +284,14 @@ async function checkNowPlaying() {
             if (audioState.isPlaying && !data.is_playing && wasAutoPaused) {
                 elements.trackName.textContent += ' (Auto-paused)';
             }
+
+            // Update play indicator
+            const playIndicator = document.querySelector('.play-indicator');
+            if (data.is_playing) {
+                playIndicator.classList.add('playing');
+            } else {
+                playIndicator.classList.remove('playing');
+            }
         } else {
             const elements = {
                 nowPlaying: document.getElementById('now-playing'),
